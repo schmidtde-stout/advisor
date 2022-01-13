@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Login | UW-Stout Advisor</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <script src="https://js.stytch.com/stytch.js"></script>
+    <div class="App">
+      <header className="App-header"></header>
+      <div class="Sign-in-container">
+        <div id="magic-link">
+          <div id="advisor-welcome">
+            <h3>Welcome to Program Course Advisor</h3>
+            <h4>Login with @uwstout.edu email</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Initialize Stytch.js with your public token. You can find this in your Stytch dashboard under API Keys.
+      var STYTCH_PUBLIC_TOKEN = 'public-token-test-98de2089-b8ab-4de1-9ad1-faf94fa77be5';
+      var stytch = Stytch(STYTCH_PUBLIC_TOKEN, {
+        onEvent: (data) => {
+          if (data.eventData.type === 'USER_EVENT_TYPE') {
+            try {
+              fetch('/magic', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                  userId: data.eventData.userId,
+                  email: data.eventData.email,
+                }),
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+            } catch (e) {
+              console.log(e);
+            }
+          }
+        },
+        onSuccess: (response) => {
+          // Handle a successfully sent magic link
+          document.getElementById('advisor-welcome').style.display = 'none';
+          console.log(response);
+        },
+        onError: (response) => {
+          console.log(response);
+        },
+      });
+      var style = {
+        fontFamily: '"Helvetica New", Helvetica, sans-serif',
+        width: '321px',
+        primaryColor: '#0577CA',
+        hideHeaderText: true,
+      };
+      var magicLinkDefaults = {
+        products: ['emailMagicLinks'],
+        emailMagicLinksOptions: {
+          loginRedirectURL: location.origin + '/authenticate',
+          loginExpirationMinutes: 30,
+          signupRedirectURL: location.origin + '/authenticate',
+          signupExpirationMinutes: 30,
+        },
+      };
+      stytch.mount({
+        elementId: '#magic-link',
+        style: style,
+        loginOrSignupView: magicLinkDefaults,
+      });
+    </script>
+  </body>
+</html>
