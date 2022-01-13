@@ -31,5 +31,6 @@ describe('utils Tests', () => {
     expect(isEmpty(new Date())).toBeFalsy(); // false
     expect(isEmpty({ a: 1 })).toBeFalsy(); // false
     expect(isEmpty({})).toBeTruthy(); // true
+    expect(isEmpty('')).toBeTruthy(); // true
   });
 });

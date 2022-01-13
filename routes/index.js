@@ -34,7 +34,11 @@ module.exports = function () {
       next(createError(403, 'There was an error authenticating the user.'));
     }
     try {
-      const user = await User.create(req.session);
+      const user = await User.create(
+        req.session.session_token,
+        req.session.userId,
+        req.session.email
+      );
       req.session.user = user;
       req.session.save(function (err) {
         if (err) console.error(err);

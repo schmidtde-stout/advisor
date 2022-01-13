@@ -1,5 +1,7 @@
 function isEmpty(value) {
-  return isObject(value) && Object.keys(value).length === 0;
+  return (
+    (isString(value) && value.length === 0) || (isObject(value) && Object.keys(value).length === 0)
+  );
 }
 
 function isArray(a) {

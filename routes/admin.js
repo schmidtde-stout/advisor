@@ -9,7 +9,7 @@ module.exports = function () {
   router.use(bodyParser.json());
   router.get('/', isUserLoaded, async (req, res, next) => {
     try {
-      const users = await User.fetchAll(req.session, 0, 100);
+      const users = await User.fetchAll(req.session.session_token, 0, 100);
       return res.render('layout', {
         pageTitle: 'Advisor Admin',
         group: 'admin',
