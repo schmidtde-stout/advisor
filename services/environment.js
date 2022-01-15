@@ -8,5 +8,4 @@ module.exports = {
   stytchEnv: process.env.STYTCH_ENV || 'https://test.stytch.com/v1/',
   sessionSecret: process.env.SESSION_SECRET,
   sessionDuration: process.env.SESSION_DURATION || 60,
-  pgConnectionString: process.env.PG_CONNECTION_STRING,
 };
