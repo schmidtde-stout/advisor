@@ -3,7 +3,6 @@ const { isString, isObject, isEmpty } = require('./utils');
 
 function isUserLoaded(req, res, next) {
   if (
-    isObject(req.session) &&
     !isEmpty(req.session) &&
     isString(req.session.session_token) &&
     !isEmpty(req.session.session_token) &&
@@ -15,28 +14,19 @@ function isUserLoaded(req, res, next) {
   res.redirect('/login');
 }
 
-function authenticateUser(req, res, next) {
+async function authenticateUser(req, res, next) {
   const token = req.query.token;
   if (isString(token)) {
     delete req.session.session_token;
-    authenticateStytchToken(token)
-      .then(
-        (result) => {
-          req.session.session_token = result.session_token;
-          return next();
-        },
-        (rejectReason) => {
-          console.log(rejectReason);
-          return res
-            .status(rejectReason.status_code)
-            .send(`Authorization of User Failed: ${rejectReason.error_message}`);
-        }
-      )
-      .catch((err) => {
-        // we get here if the .then() rejects, which shouldn't happen since we are just doing assignments
-        console.log(err);
-        return res.status(500).send(`Authorization of User Failed: ${err.error_message}`);
-      });
+    try {
+      const response = await authenticateStytchToken(token);
+      req.session.session_token = response.session_token;
+      next();
+    } catch (err) {
+      return res
+        .status(err.status_code)
+        .send({ Error: `Authorization Failed: ${err.error_message}` });
+    }
   } else {
     return res.status(401).send({ message: 'Authorization of User Failed: No Token' });
   }
@@ -49,28 +39,19 @@ function destroyExpressSession(req, next) {
   return next();
 }
 
-function revokeSession(req, res, next) {
+async function revokeSession(req, res, next) {
   const token = req.session.session_token;
   if (isString(token)) {
-    revokeStytchSession(token)
-      .then(
-        (result) => {
-          return destroyExpressSession(req, next);
-        },
-        (rejectReason) => {
-          // if revoking the Stytch session fails, we don't kill the req.session yet since it holds the stytch session token
-          // this might be the wrong action, more experience with Stytch might be required.
-          console.log(`Revoke of Session Failed: ${rejectReason.error_message}`);
-          return res
-            .status(rejectReason.status_code)
-            .send(`Revoke of Session Failed: ${rejectReason.error_message}`);
-        }
-      )
-      .catch((err) => {
-        // we get here if the .then() rejects, that means destroyExpressSession had a thrown error, so just return 500 and be done
-        console.log(err);
-        return res.status(500).send(`Revoke of Session Failed: ${err.error_message}`);
-      });
+    try {
+      await revokeStytchSession(token);
+      return destroyExpressSession(req, next);
+    } catch (err) {
+      // if revoking the Stytch session fails, we don't kill the req.session yet since it holds the stytch session token
+      // this might be the wrong action, more experience with Stytch is required.
+      return res
+        .status(err.status_code)
+        .send({ Error: `Revoke of Session Failed: ${err.error_message}` });
+    }
   } else {
     // Since we have no token to revoke, just destroy the req.session and move on
     return destroyExpressSession(req, next);
