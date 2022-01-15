@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const User = require('../controllers/User');
 const createError = require('http-errors');
+const { isString } = require('../services/utils');
 const { isUserLoaded, authenticateUser, revokeSession } = require('../services/auth');
 
 module.exports = function () {
@@ -17,7 +18,8 @@ module.exports = function () {
   });
 
   router.get('/login', async (req, res) => {
-    res.sendFile(path.join(appDir, 'static', 'signupOrLogin.html'));
+    // res.sendFile(path.join(appDir, 'static', 'signupOrLogin.html'));
+    res.sendFile(path.join(__dirname, '..', 'static', 'signupOrLogin.html'));
   });
 
   router.post('/magic', async (req, res) => {
@@ -30,7 +32,7 @@ module.exports = function () {
   });
 
   router.get('/authenticate', authenticateUser, async (req, res, next) => {
-    if (!req.session.authenticated) {
+    if (!isString(req.session.session_token)) {
       next(createError(403, 'There was an error authenticating the user.'));
     }
     try {

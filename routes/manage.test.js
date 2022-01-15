@@ -23,7 +23,6 @@ function resetMockIsUserLoaded() {
   auth.isUserLoaded.mockImplementation((req, res, next) => {
     req.session = {
       session_token: 'thisisatoken',
-      authenticated: true,
       user: mockUser,
     };
     next();
@@ -32,17 +31,21 @@ function resetMockIsUserLoaded() {
 
 const app = require('../app')();
 
-describe('GET /advise', () => {
+describe('Manage Route Tests', () => {
   beforeEach(() => {
     resetMockIsUserLoaded();
   });
 
-  test('basic page checks', async () => {
-    const response = await request(app).get('/manage');
-    const doc = new JSDOM(response.text).window.document;
+  describe('Manage Index Page Tests', () => {
+    test('basic page checks', async () => {
+      const response = await request(app).get('/manage');
+      const doc = new JSDOM(response.text).window.document;
 
-    // check the main navbar
-    expect(doc.querySelector('.navbar-nav>.active').getAttribute('href')).toBe('/manage');
-    expect(doc.querySelector('.navbar-nav>.navbar-text').innerHTML).toContain('master@uwstout.edu');
+      // check the main navbar
+      expect(doc.querySelector('.navbar-nav>.active').getAttribute('href')).toBe('/manage');
+      expect(doc.querySelector('.navbar-nav>.navbar-text').innerHTML).toContain(
+        'master@uwstout.edu'
+      );
+    });
   });
 });

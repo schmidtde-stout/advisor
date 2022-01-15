@@ -22,13 +22,16 @@ const { res, next, clearMockRes } = getMockRes({});
 function setupMockReq(token, authenticated) {
   return getMockReq({
     session: {
-      authenticated: authenticated,
       session_token: token,
       save: jest.fn(),
       destroy: jest.fn(),
     },
   });
 }
+
+beforeAll(() => {
+  jest.spyOn(console, 'log').mockImplementation(() => {});
+});
 
 describe('auth service tests', () => {
   describe('isUserLoaded tests', () => {
@@ -40,7 +43,6 @@ describe('auth service tests', () => {
     test('isUserLoaded - happy path', async () => {
       const req = getMockReq({
         session: {
-          authenticated: true,
           user: {
             id: 1,
           },
@@ -55,11 +57,9 @@ describe('auth service tests', () => {
     test('isUserLoaded - not authenticated', async () => {
       const req = getMockReq({
         session: {
-          authenticated: false,
           user: {
             id: 1,
           },
-          session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
         },
       });
       auth.isUserLoaded(req, res, next);
@@ -70,7 +70,6 @@ describe('auth service tests', () => {
     test('isUserLoaded - missing token', async () => {
       const req = getMockReq({
         session: {
-          authenticated: true,
           user: {
             id: 1,
           },
@@ -84,7 +83,6 @@ describe('auth service tests', () => {
     test('isUserLoaded - token empty', async () => {
       const req = getMockReq({
         session: {
-          authenticated: true,
           user: {
             id: 1,
           },
@@ -99,7 +97,6 @@ describe('auth service tests', () => {
     test('isUserLoaded - empty user', async () => {
       const req = getMockReq({
         session: {
-          authenticated: true,
           user: {},
           session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
         },
@@ -112,7 +109,6 @@ describe('auth service tests', () => {
     test('isUserLoaded - missing user', async () => {
       const req = getMockReq({
         session: {
-          authenticated: true,
           session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
         },
       });
@@ -176,6 +172,7 @@ describe('auth service tests', () => {
         query: {
           token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
         },
+        session: {},
       });
       stytchwrapper.authenticateStytchToken.mockRejectedValue({
         status_code: 401,
@@ -192,9 +189,7 @@ describe('auth service tests', () => {
         query: {
           token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
         },
-        session: {
-          authenticated: false,
-        },
+        session: {},
       });
       stytchwrapper.authenticateStytchToken.mockResolvedValue({
         status_code: 200,
@@ -204,7 +199,6 @@ describe('auth service tests', () => {
       expect(stytchwrapper.authenticateStytchToken.mock.calls).toHaveLength(1);
       expect(next).toBeCalled();
       expect(req.session.session_token).toBe('mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q');
-      expect(req.session.authenticated).toBe(true);
     });
   });
 });

@@ -8,8 +8,7 @@ function isUserLoaded(req, res, next) {
     isString(req.session.session_token) &&
     !isEmpty(req.session.session_token) &&
     isObject(req.session.user) &&
-    !isEmpty(req.session.user) &&
-    req.session.authenticated
+    !isEmpty(req.session.user)
   ) {
     return next();
   }
@@ -19,11 +18,11 @@ function isUserLoaded(req, res, next) {
 function authenticateUser(req, res, next) {
   const token = req.query.token;
   if (isString(token)) {
+    delete req.session.session_token;
     authenticateStytchToken(token)
       .then(
         (result) => {
           req.session.session_token = result.session_token;
-          req.session.authenticated = true;
           return next();
         },
         (rejectReason) => {

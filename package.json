@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js --ignore sessions/",
-    "test": "npx jest && npx eslint ./controllers/* ./models/* ./routes/* ./serializers/* ./services/* ./*.js",
+    "test": "npx jest --collect-coverage && npx eslint ./controllers/* ./models/* ./routes/* ./serializers/* ./services/* ./*.js",
     "test:debug": "npx jest --runInBand"
   },
   "dependencies": {

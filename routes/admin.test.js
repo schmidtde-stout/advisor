@@ -40,7 +40,6 @@ function resetMockIsUserLoaded() {
   auth.isUserLoaded.mockImplementation((req, res, next) => {
     req.session = {
       session_token: 'thisisatoken',
-      authenticated: true,
       user: mockUser,
     };
     next();
@@ -66,42 +65,57 @@ function dataForGetUser(rows, offset = 0) {
 
 const app = require('../app')();
 
-describe('GET /admin', () => {
+describe('Admin Route Tests', () => {
   beforeEach(() => {
     User.fetchAll.mockReset();
     User.fetchAll.mockResolvedValue(null);
     resetMockIsUserLoaded();
   });
 
-  test('should make a call to fetchAll', async () => {
-    const data = dataForGetUser(3);
-    User.fetchAll.mockResolvedValueOnce(data);
-    await request(app).get('/admin');
-    expect(User.fetchAll.mock.calls).toHaveLength(1);
-    expect(User.fetchAll.mock.calls[0]).toHaveLength(3);
-    expect(User.fetchAll.mock.calls[0][0]).toBe('thisisatoken');
-    expect(User.fetchAll.mock.calls[0][1]).toBe(0);
-    expect(User.fetchAll.mock.calls[0][2]).toBe(100);
-  });
+  describe('Admin Index Page Tests', () => {
+    test('should make a call to fetchAll', async () => {
+      const data = dataForGetUser(3);
+      User.fetchAll.mockResolvedValueOnce(data);
+      await request(app).get('/admin');
+      expect(User.fetchAll.mock.calls).toHaveLength(1);
+      expect(User.fetchAll.mock.calls[0]).toHaveLength(3);
+      expect(User.fetchAll.mock.calls[0][0]).toBe('thisisatoken');
+      expect(User.fetchAll.mock.calls[0][1]).toBe(0);
+      expect(User.fetchAll.mock.calls[0][2]).toBe(100);
+    });
 
-  test('basic page checks', async () => {
-    const data = dataForGetUser(3);
-    User.fetchAll.mockResolvedValueOnce(data);
-    const response = await request(app).get('/admin');
-    const doc = new JSDOM(response.text).window.document;
+    test('basic page checks', async () => {
+      const data = dataForGetUser(3);
+      User.fetchAll.mockResolvedValueOnce(data);
+      const response = await request(app).get('/admin');
+      const doc = new JSDOM(response.text).window.document;
 
-    // check the main navbar
-    expect(doc.querySelector('.navbar-nav>.active').getAttribute('href')).toBe('/admin');
-    expect(doc.querySelector('.navbar-nav>.navbar-text').innerHTML).toContain('master@uwstout.edu');
+      // check the main navbar
+      expect(doc.querySelector('.navbar-nav>.active').getAttribute('href')).toBe('/admin');
+      expect(doc.querySelector('.navbar-nav>.navbar-text').innerHTML).toContain(
+        'master@uwstout.edu'
+      );
 
-    // count the rows
-    const rows = doc.querySelectorAll('.card-body>table>tbody>tr');
-    expect(rows).toHaveLength(data.length);
+      // count the rows
+      const rows = doc.querySelectorAll('.card-body>table>tbody>tr');
+      expect(rows).toHaveLength(data.length);
 
-    // check the table contents
-    for (let i = 0; i < rows.length; i++) {
-      expect(rows[i].querySelector('td:nth-child(3)').innerHTML).toBe(data[i].email);
-      expect(rows[i].querySelector('td:nth-child(4)').innerHTML).toBe(data[i].role);
-    }
+      // check the table contents
+      for (let i = 0; i < rows.length; i++) {
+        expect(rows[i].querySelector('td:nth-child(3)').innerHTML).toBe(data[i].email);
+        expect(rows[i].querySelector('td:nth-child(4)').innerHTML).toBe(data[i].role);
+      }
+    });
+
+    test('User.fetchAll thrown error', async () => {
+      User.fetchAll.mockRejectedValue(new Error('Error from User.fetchAll'));
+      const response = await request(app).get('/admin');
+      expect(User.fetchAll.mock.calls).toHaveLength(1);
+      expect(User.fetchAll.mock.calls[0]).toHaveLength(3);
+      expect(User.fetchAll.mock.calls[0][0]).toBe('thisisatoken');
+      expect(User.fetchAll.mock.calls[0][1]).toBe(0);
+      expect(User.fetchAll.mock.calls[0][2]).toBe(100);
+      expect(response.statusCode).toBe(500);
+    });
   });
 });

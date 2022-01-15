@@ -2,8 +2,10 @@ const axios = require('axios');
 const User = require('./User');
 
 jest.mock('axios');
+
 beforeAll(() => {
   axios.create.mockReturnThis();
+  jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 describe('User controller tests', () => {
