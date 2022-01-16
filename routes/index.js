@@ -3,7 +3,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const User = require('../controllers/User');
 const createError = require('http-errors');
-const { isString } = require('../services/utils');
 const { isUserLoaded, authenticateUser, revokeSession } = require('../services/auth');
 
 module.exports = function () {
@@ -32,9 +31,6 @@ module.exports = function () {
   });
 
   router.get('/authenticate', authenticateUser, async (req, res, next) => {
-    if (!isString(req.session.session_token)) {
-      next(createError(403, 'There was an error authenticating the user.'));
-    }
     try {
       const user = await User.create(
         req.session.session_token,

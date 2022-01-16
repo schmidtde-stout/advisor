@@ -1,3 +1,4 @@
+const createError = require('http-errors');
 const { authenticateStytchToken, revokeStytchSession } = require('./stytchwrapper');
 const { isString, isObject, isEmpty } = require('./utils');
 
@@ -23,12 +24,10 @@ async function authenticateUser(req, res, next) {
       req.session.session_token = response.session_token;
       next();
     } catch (err) {
-      return res
-        .status(err.status_code)
-        .send({ Error: `Authorization Failed: ${err.error_message}` });
+      next(createError(err.status_code, `Authorization Failed: ${err.error_message}`));
     }
   } else {
-    return res.status(401).send({ message: 'Authorization of User Failed: No Token' });
+    next(createError(401, 'Authorization of User Failed: No Token'));
   }
 }
 
@@ -48,9 +47,7 @@ async function revokeSession(req, res, next) {
     } catch (err) {
       // if revoking the Stytch session fails, we don't kill the req.session yet since it holds the stytch session token
       // this might be the wrong action, more experience with Stytch is required.
-      return res
-        .status(err.status_code)
-        .send({ Error: `Revoke of Session Failed: ${err.error_message}` });
+      next(createError(err.status_code, `Revoke of Session Failed: ${err.error_message}`));
     }
   } else {
     // Since we have no token to revoke, just destroy the req.session and move on

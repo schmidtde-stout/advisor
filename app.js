@@ -17,7 +17,17 @@ module.exports = (session) => {
 
   // default error catch
   app.use((request, response, next) => {
-    return next(createError(404, 'File not found'));
+    return next(new createError.NotFound());
+  });
+
+  // error handler middleware
+  app.use((error, req, res, next) => {
+    res.status(error.status || 500).send({
+      error: {
+        status: error.status || 500,
+        message: error.message || 'Internal Server Error',
+      },
+    });
   });
 
   return app;

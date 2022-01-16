@@ -148,8 +148,8 @@ describe('auth service tests', () => {
       });
       await auth.revokeSession(req, res, next);
       expect(stytchwrapper.revokeStytchSession.mock.calls).toHaveLength(1);
-      expect(res.status).toBeCalledWith(400);
-      expect(next).not.toBeCalled();
+      expect(next.mock.calls).toHaveLength(1);
+      expect(next.mock.calls[0][0].statusCode).toBe(400);
       expect(req.session.destroy).not.toBeCalled();
     });
   });
@@ -163,8 +163,8 @@ describe('auth service tests', () => {
     test('authenticateUser - no token', async () => {
       const req = getMockReq();
       await auth.authenticateUser(req, res, next);
-      expect(next).not.toBeCalled();
-      expect(res.status).toBeCalledWith(401);
+      expect(next.mock.calls).toHaveLength(1);
+      expect(next.mock.calls[0][0].statusCode).toBe(401);
     });
 
     test('authenticateUser - expired/bad token', async () => {
@@ -179,8 +179,8 @@ describe('auth service tests', () => {
         error_message: 'Magic link could not be authenticated.',
       });
       await auth.authenticateUser(req, res, next);
-      expect(next).not.toBeCalled();
-      expect(res.status).toBeCalledWith(401);
+      expect(next.mock.calls).toHaveLength(1);
+      expect(next.mock.calls[0][0].statusCode).toBe(401);
       expect(stytchwrapper.authenticateStytchToken.mock.calls).toHaveLength(1);
     });
 

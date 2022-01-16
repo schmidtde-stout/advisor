@@ -1,4 +1,5 @@
 const request = require('supertest');
+const createError = require('http-errors');
 const UserModel = require('../models/User');
 const User = require('../controllers/User');
 const auth = require('../services/auth');
@@ -119,7 +120,7 @@ describe('Index Route Tests', () => {
             res.redirect('/'); // NOTE: route WILL call session.save() that will redirect, provide mock here
           }),
         };
-        return next();
+        next();
       });
       User.create.mockResolvedValue(mockUser);
       const response = await request(app).get(`/authenticate?token=${token}`);
@@ -139,7 +140,7 @@ describe('Index Route Tests', () => {
           userId: mockUser.userId, // NOTE: Technically this is inserted into session by /magic
           email: mockUser.email, // NOTE: Technically this is inserted into session by /magic
         };
-        return next();
+        next();
       });
       User.create.mockRejectedValue(new Error('Error from User.create'));
       const response = await request(app).get(`/authenticate?token=${token}`);
@@ -157,10 +158,22 @@ describe('Index Route Tests', () => {
           userId: mockUser.userId,
           email: mockUser.email,
         };
-        next();
+        next(createError(403, 'no token from auth.authenticateUser'));
       });
       const response = await request(app).get(`/authenticate?token=${token}`);
       expect(response.statusCode).toBe(403);
+    });
+
+    test('authenticateUser - no token passed parameter', async () => {
+      auth.authenticateUser.mockImplementationOnce((req, res, next) => {
+        req.session = {
+          userId: mockUser.userId,
+          email: mockUser.email,
+        };
+        next(createError(401, 'Authorization of User Failed: No Token'));
+      });
+      const response = await request(app).get(`/authenticate`);
+      expect(response.statusCode).toBe(401);
     });
   });
 });
