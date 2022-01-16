@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { isUserLoaded } = require('../services/auth');
 const User = require('../controllers/User');
-const createError = require('http-errors');
 
 module.exports = function () {
   const router = express.Router();
@@ -18,7 +17,7 @@ module.exports = function () {
         data: users,
       });
     } catch (error) {
-      next(createError(500, error.message));
+      next(error);
     }
   });
 

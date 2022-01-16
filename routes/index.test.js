@@ -1,5 +1,5 @@
 const request = require('supertest');
-const createError = require('http-errors');
+const HttpError = require('http-errors');
 const UserModel = require('../models/User');
 const User = require('../controllers/User');
 const auth = require('../services/auth');
@@ -158,7 +158,7 @@ describe('Index Route Tests', () => {
           userId: mockUser.userId,
           email: mockUser.email,
         };
-        next(createError(403, 'no token from auth.authenticateUser'));
+        next(HttpError(403, 'no token from auth.authenticateUser'));
       });
       const response = await request(app).get(`/authenticate?token=${token}`);
       expect(response.statusCode).toBe(403);
@@ -170,7 +170,7 @@ describe('Index Route Tests', () => {
           userId: mockUser.userId,
           email: mockUser.email,
         };
-        next(createError(401, 'Authorization of User Failed: No Token'));
+        next(HttpError(401, 'Authorization of User Failed: No Token'));
       });
       const response = await request(app).get(`/authenticate`);
       expect(response.statusCode).toBe(401);

@@ -2,7 +2,6 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const User = require('../controllers/User');
-const createError = require('http-errors');
 const { isUserLoaded, authenticateUser, revokeSession } = require('../services/auth');
 
 module.exports = function () {
@@ -43,7 +42,7 @@ module.exports = function () {
         res.redirect('/');
       });
     } catch (error) {
-      next(createError(500, error.message));
+      next(error);
     }
   });
 

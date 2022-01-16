@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const createError = require('http-errors');
+const HttpError = require('http-errors');
 const flash = require('express-flash');
 
 module.exports = (session) => {
@@ -17,14 +17,14 @@ module.exports = (session) => {
 
   // default error catch
   app.use((request, response, next) => {
-    return next(new createError.NotFound());
+    return next(new HttpError.NotFound());
   });
 
   // error handler middleware
   app.use((error, req, res, next) => {
-    res.status(error.status || 500).send({
+    res.status(error.statusCode || error.status || 500).send({
       error: {
-        status: error.status || 500,
+        status: error.statusCode || error.status || 500,
         message: error.message || 'Internal Server Error',
       },
     });
