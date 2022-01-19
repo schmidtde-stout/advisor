@@ -1,6 +1,7 @@
 const HttpError = require('http-errors');
+const log = require('loglevel');
 const { authenticateStytchToken, revokeStytchSession } = require('./stytchwrapper');
-const { isString, isObject, isEmpty } = require('./utils');
+const { isString, isObject, isEmpty, destroySession, saveSession } = require('./utils');
 
 function isUserLoaded(req, res, next) {
   if (
@@ -22,36 +23,38 @@ async function authenticateUser(req, res, next) {
     try {
       const response = await authenticateStytchToken(token);
       req.session.session_token = response.session_token;
+      await saveSession(req);
+      log.debug(`Stytch API Success: Authenticated for stytch session ${response.session_token}`);
       next();
     } catch (err) {
-      next(HttpError(err.status_code, `Authorization Failed: ${err.error_message}`));
+      next(
+        HttpError(
+          err.status_code || err.status || 500,
+          `AuthorizationFailed: ${err.error_message || err.message}`
+        )
+      );
     }
   } else {
     next(HttpError(401, 'Authorization of User Failed: No Token'));
   }
 }
 
-function destroyExpressSession(req, next) {
-  req.session.destroy((err) => {
-    if (err) console.log(`Failed to destroy express session: ${err}`);
-  });
-  return next();
-}
-
 async function revokeSession(req, res, next) {
   const token = req.session.session_token;
-  if (isString(token)) {
-    try {
+  try {
+    if (isString(token)) {
       await revokeStytchSession(token);
-      return destroyExpressSession(req, next);
-    } catch (err) {
-      // if revoking the Stytch session fails, we don't kill the req.session yet since it holds the stytch session token
-      // this might be the wrong action, more experience with Stytch is required.
-      next(HttpError(err.status_code, `Revoke of Session Failed: ${err.error_message}`));
     }
-  } else {
-    // Since we have no token to revoke, just destroy the req.session and move on
-    return destroyExpressSession(req, next);
+    await destroySession(req);
+    log.debug(`Stytch API Success: destroyed express & stytch session ${token}`);
+    next();
+  } catch (err) {
+    next(
+      HttpError(
+        err.status_code || err.status || 500,
+        `Revoke of Session Failed: ${err.error_message || err.message}`
+      )
+    );
   }
 }
 

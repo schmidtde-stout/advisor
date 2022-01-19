@@ -1,5 +1,7 @@
+const log = require('loglevel');
 const stytchwrapper = require('./stytchwrapper');
 const auth = require('./auth');
+const utils = require('./utils');
 const { getMockReq, getMockRes } = require('@jest-mock/express');
 
 jest.mock('./environment', () => {
@@ -17,6 +19,16 @@ jest.mock('./stytchwrapper', () => {
   };
 });
 
+jest.mock('./utils', () => {
+  const originalModule = jest.requireActual('./utils');
+  return {
+    __esModule: true,
+    ...originalModule,
+    destroySession: jest.fn(),
+    saveSession: jest.fn(),
+  };
+});
+
 const { res, next, clearMockRes } = getMockRes({});
 
 function setupMockReq(token, authenticated) {
@@ -30,7 +42,7 @@ function setupMockReq(token, authenticated) {
 }
 
 beforeAll(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => {});
+  log.disableAll();
 });
 
 describe('auth service tests', () => {
@@ -122,22 +134,38 @@ describe('auth service tests', () => {
     beforeEach(() => {
       clearMockRes();
       stytchwrapper.revokeStytchSession.mockReset();
+      utils.destroySession.mockReset();
     });
 
     test('revokeStytchSession - happy path', async () => {
       const req = setupMockReq('mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q', true);
       stytchwrapper.revokeStytchSession.mockResolvedValue({});
+      utils.destroySession.mockResolvedValue();
       await auth.revokeSession(req, res, next);
       expect(next).toBeCalled();
-      expect(req.session.destroy).toBeCalled();
+      expect(next.mock.calls[0]).toHaveLength(0);
+      expect(utils.destroySession).toBeCalled();
+    });
+
+    test('revokeStytchSession - destroy session failure', async () => {
+      const req = setupMockReq(null, true);
+      utils.destroySession.mockRejectedValue(new Error('session destroy failure'));
+      await auth.revokeSession(req, res, next);
+      expect(stytchwrapper.revokeStytchSession).not.toBeCalled();
+      expect(next).toBeCalled();
+      expect(next.mock.calls).toHaveLength(1);
+      expect(next.mock.calls[0]).toHaveLength(1);
+      expect(utils.destroySession).toBeCalled();
     });
 
     test('revokeStytchSession - no token', async () => {
       const req = setupMockReq(null, true);
+      utils.destroySession.mockResolvedValue();
       await auth.revokeSession(req, res, next);
       expect(stytchwrapper.revokeStytchSession).not.toBeCalled();
       expect(next).toBeCalled();
-      expect(req.session.destroy).toBeCalled();
+      expect(next.mock.calls[0]).toHaveLength(0);
+      expect(utils.destroySession).toBeCalled();
     });
 
     test('revokeStytchSession - bad token', async () => {
@@ -150,7 +178,7 @@ describe('auth service tests', () => {
       expect(stytchwrapper.revokeStytchSession.mock.calls).toHaveLength(1);
       expect(next.mock.calls).toHaveLength(1);
       expect(next.mock.calls[0][0].statusCode).toBe(400);
-      expect(req.session.destroy).not.toBeCalled();
+      expect(utils.destroySession).not.toBeCalled();
     });
   });
 
@@ -158,6 +186,27 @@ describe('auth service tests', () => {
     beforeEach(() => {
       clearMockRes();
       stytchwrapper.authenticateStytchToken.mockReset();
+      utils.saveSession.mockReset();
+    });
+
+    test('authenticateUser - happy path', async () => {
+      const req = getMockReq({
+        query: {
+          token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
+        },
+        session: {},
+      });
+      stytchwrapper.authenticateStytchToken.mockResolvedValue({
+        status_code: 200,
+        session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
+      });
+      utils.saveSession.mockResolvedValue();
+      await auth.authenticateUser(req, res, next);
+      expect(stytchwrapper.authenticateStytchToken.mock.calls).toHaveLength(1);
+      expect(next).toBeCalled();
+      expect(next.mock.calls[0]).toHaveLength(0);
+      expect(req.session.session_token).toBe('mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q');
+      expect(utils.saveSession).toBeCalled();
     });
 
     test('authenticateUser - no token', async () => {
@@ -165,6 +214,7 @@ describe('auth service tests', () => {
       await auth.authenticateUser(req, res, next);
       expect(next.mock.calls).toHaveLength(1);
       expect(next.mock.calls[0][0].statusCode).toBe(401);
+      expect(utils.saveSession).not.toBeCalled();
     });
 
     test('authenticateUser - expired/bad token', async () => {
@@ -182,9 +232,10 @@ describe('auth service tests', () => {
       expect(next.mock.calls).toHaveLength(1);
       expect(next.mock.calls[0][0].statusCode).toBe(401);
       expect(stytchwrapper.authenticateStytchToken.mock.calls).toHaveLength(1);
+      expect(utils.saveSession).not.toBeCalled();
     });
 
-    test('authenticateUser - Good token', async () => {
+    test('authenticateUser - Good token, save failure', async () => {
       const req = getMockReq({
         query: {
           token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
@@ -195,10 +246,14 @@ describe('auth service tests', () => {
         status_code: 200,
         session_token: 'mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q',
       });
+      utils.saveSession.mockRejectedValue(new Error('save session failure'));
       await auth.authenticateUser(req, res, next);
       expect(stytchwrapper.authenticateStytchToken.mock.calls).toHaveLength(1);
       expect(next).toBeCalled();
+      expect(next.mock.calls).toHaveLength(1);
+      expect(next.mock.calls[0]).toHaveLength(1);
       expect(req.session.session_token).toBe('mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q');
+      expect(utils.saveSession).toBeCalled();
     });
   });
 });

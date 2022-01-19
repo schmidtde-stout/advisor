@@ -1,8 +1,14 @@
 const request = require('supertest');
+const { JSDOM } = require('jsdom');
+const HttpError = require('http-errors');
+const log = require('loglevel');
 const User = require('../controllers/User');
 const UserModel = require('../models/User');
 const auth = require('../services/auth');
-const { JSDOM } = require('jsdom');
+
+beforeAll(() => {
+  log.disableAll();
+});
 
 jest.mock('../controllers/User', () => {
   return {
@@ -108,7 +114,7 @@ describe('Admin Route Tests', () => {
     });
 
     test('User.fetchAll thrown error', async () => {
-      User.fetchAll.mockRejectedValue(new Error('Error from User.fetchAll'));
+      User.fetchAll.mockRejectedValue(HttpError(500, `Advisor API Error`));
       const response = await request(app).get('/admin');
       expect(User.fetchAll.mock.calls).toHaveLength(1);
       expect(User.fetchAll.mock.calls[0]).toHaveLength(3);

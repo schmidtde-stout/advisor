@@ -15,9 +15,30 @@ function isObject(a) {
 function isString(a) {
   return typeof a === 'string' || a instanceof String;
 }
+
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.save((err) => {
+      if (err) reject(err);
+      resolve();
+    });
+  });
+}
+
+function destroySession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.destroy((err) => {
+      if (err) reject(err);
+      resolve();
+    });
+  });
+}
+
 module.exports = {
   isEmpty,
   isArray,
   isObject,
   isString,
+  saveSession,
+  destroySession,
 };

@@ -1,11 +1,12 @@
 const axios = require('axios');
+const log = require('loglevel');
 const User = require('./User');
 
 jest.mock('axios');
 
 beforeAll(() => {
   axios.create.mockReturnThis();
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  log.disableAll();
 });
 
 describe('User controller tests', () => {
@@ -45,17 +46,20 @@ describe('User controller tests', () => {
 
     test('fetchAll -no records returned', async () => {
       const users = [];
-      axios.get.mockResolvedValueOnce({ data: users, status: 200 });
+      axios.get.mockResolvedValueOnce({ status: 200, data: users });
       const result = await User.fetchAll('mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q', 0, 100);
       expect(axios.get).toHaveBeenCalledWith('users?offset=0&limit=100');
       expect(result).toHaveLength(0);
     });
 
     test('fetchAll - error response', async () => {
-      axios.get.mockResolvedValueOnce({ status: 500 });
+      axios.get.mockResolvedValueOnce({
+        status: 500,
+        data: { error: { status: 500, message: 'Internal Server Error' } },
+      });
       await expect(
         User.fetchAll('mZAYn5aLEqKUlZ_Ad9U_fWr38GaAQ1oFAhT8ds245v7Q', 0, 100)
-      ).rejects.toThrow('Error: 500');
+      ).rejects.toThrow('Advisor API Error 500: Internal Server Error');
       expect(axios.get).toHaveBeenCalledWith('users?offset=0&limit=100');
     });
   });

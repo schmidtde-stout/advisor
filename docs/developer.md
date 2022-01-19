@@ -10,15 +10,10 @@
 
 #### Setup Instructions
 
-Install the above tools, accept all defaults. Create a GitHub account with your UW-Stout email address.
+Install the above tools, accept all defaults. Create a GitHub account with your UW-Stout email address. See notes on [README](/README.md) for instructions on how to clone this repo and install the npm packages.
 
-_Server Setup_
+_Tools Setup_
 
-- Clone this repository
-- Open the cloned folder in Visual Studio Code (vscode): File > Open Folder the cloned folder
-- Use `npm` to install all dependent Node.js modules:
-  - Open a Terminal: Terminal > New Terminal
-  - Type `npm install`
 - Install the following vscode extensions:
   eslint, prettier, prettier eslint, markdown all in one
 
@@ -27,16 +22,6 @@ _Server Setup_
   - Editor: Format on Save - turn on
   - Editor: Default Formatter - Prettier - Code Formatter (esbenp.prettier-vscode)
   - Eslint › Code Actions On Save: Mode - set to problems
-
-- In the cloned folder, create a .env file, and populate with local variables:
-
-  ```env
-  PORT=3000
-  PG_CONNECTION_STRING=postgres://postgres:<masterpassword>@localhost:5432/<dbname>
-  STYTCH_PROJECT_ID=<See Canvas Notes>
-  STYTCH_SECRET=<See Canvas Notes>
-  MASTER_ADMIN_EMAIL=<your UW-Stout Email>
-  ```
 
 **To run the API server**, from a terminal: run `npm start`
 
@@ -47,6 +32,10 @@ _Server Setup_
 **To run all Jest tests**, from a terminal: run `npm test`
 
 **To run all Jest tests in debug**, from a terminal: run `npm run test:debug`
+
+**To run an individual test**, from a terminal (in windows): run `npx jest -t "the test name"`. The test name is the first parameter in a jest test block, i.e. `test('the test name', async () => { ... `
+
+**To run all tests in an test file**, from a terminal (in windows): run `npx jest <test file>`. e.g. `npx jest users.test.js`
 
 ### Development Conventions
 
@@ -64,6 +53,15 @@ _Server Setup_
 - All routes, if a thrown error is possible, should catch and forward (next(error)) to the Error handler in app.js
 - If middleware (e.g. authenticateUser) encounters an unrecoverable error it should throw an HttpError
 - All thrown errors should use http-errors modules to create errors
+
+### Logging
+
+- Always use `const log = require('loglevel');`
+- Every route should have a log.info on a successful request
+- thrown HttpErrors are caught and logged in the middleware error handler (in app.js), no additional logging is necessary
+- Underlying services and middleware may use log.debug for logging successful events
+- log.trace can be used for adhoc debugging, but should not be committed
+- The logging level is set in the LOG_LEVEL environment variable, it defaults to `info`
 
 ### Definition of Done
 

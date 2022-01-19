@@ -1,7 +1,12 @@
 const request = require('supertest');
+const { JSDOM } = require('jsdom');
+const log = require('loglevel');
 const UserModel = require('../models/User');
 const auth = require('../services/auth');
-const { JSDOM } = require('jsdom');
+
+beforeAll(() => {
+  log.disableAll();
+});
 
 const mockUser = new UserModel({
   id: '1000',

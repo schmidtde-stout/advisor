@@ -1,5 +1,5 @@
-const env = require('./environment');
 const stytch = require('stytch');
+const env = require('./environment');
 
 function authenticateStytchToken(token) {
   const client = new stytch.Client({
