@@ -23,15 +23,12 @@ module.exports = (session) => {
 
   // error handler middleware
   app.use((err, req, res, next) => {
-    const error =
-      err instanceof HttpError
-        ? err
-        : HttpError(err.statusCode || err.status || 500, err.message || 'Internal Server Error');
-    log.error(`${req.method} ${req.originalUrl} ${error.statusCode}: ${error.message}`);
-    res.status(error.statusCode).send({
+    err.statusCode = err.statusCode || err.status || 500;
+    log.error(`${req.method} ${req.originalUrl} ${err.statusCode}: ${err.message}`);
+    res.status(err.statusCode).send({
       error: {
-        status: error.statusCode,
-        message: error.message,
+        status: err.statusCode,
+        message: err.message,
       },
     });
   });
